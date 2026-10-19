@@ -1,63 +1,58 @@
-# Short Link System
+# 短链接系统（Short Link System）
 
-一个基于 Python、FastAPI 和 MySQL 的短链接服务，用于练习后端接口开发、数据库持久化和自动化测试。
+一个练手用的后端小项目，用 FastAPI + MySQL 实现短链接的生成、跳转和点击统计。
+是我学 Web 开发时的课程作业，功能不复杂，能跑就行。
 
-## 一、项目功能
+## 一、功能
 
-- 创建短链接：输入原始网址，生成短码并返回短链接。
-- 短链接跳转：访问短链接后，查询原始网址并执行 HTTP 302 重定向。
-- 数据持久化：使用 MySQL 保存短码、原始网址、创建时间和访问次数。
-- 参数校验：使用 FastAPI 和 Pydantic 校验请求数据。
-- 异常处理：短码不存在时返回 HTTP 404，非法网址返回 HTTP 422。
-- 访问统计：每次成功访问短链接后，更新对应记录的访问次数。
-- 自动化测试：使用 pytest 和 FastAPI TestClient 验证主要业务功能。
+- 输入长网址生成短链接，也可以自己指定短码（4-16 位字母数字）
+- 访问短链接 302 跳转到原网址
+- 记录每个短链接的点击次数
+- 查询、删除短链接
+- 参数校验：网址不合法返回 422，短码不存在返回 404
+- 自动化测试：pytest，一共 10 个用例
 
 ## 二、技术栈
 
-| 技术 | 用途 |
+| 技术 | 说明 |
 | --- | --- |
-| Python 3.13 | 主要开发语言 |
-| FastAPI | Web API 框架 |
-| Uvicorn | 本地运行 Web 服务 |
-| MySQL 8 | 关系型数据库 |
-| PyMySQL | Python MySQL 驱动 |
-| python-dotenv | 读取本地环境配置 |
-| pytest | 自动化测试 |
-| HTTPX | HTTP 测试依赖 |
+| Python 3.13 | 主力语言 |
+| FastAPI | Web 框架 |
+| MySQL 8 | 数据库 |
+| PyMySQL | 数据库驱动，没上 ORM |
+| pytest | 测试 |
 
 ## 三、项目结构
 
 ```text
 short-link-system/
-├── main.py          # API 接口与业务逻辑
-├── test_api.py      # API 自动化测试
-├── test_db.py       # 数据库连接测试
-├── .env             # 本地数据库配置，不提交到 Git
-├── .gitignore       # Git 忽略规则
-├── README.md        # 项目说明
-└── .venv/           # Python 虚拟环境，不提交到 Git
+├── main.py          # API 接口和业务逻辑，全在这一个文件里
+├── test_api.py      # 接口测试
+├── test_db.py       # 数据库连通性检查
+├── conftest.py      # 测试 fixture，负责隔离测试库
+├── .env.example     # 配置模板，复制成 .env 用
+├── .env             # 本地配置，不上传 Git
+├── requirements.txt # 依赖清单
+└── README.md
 ```
 
-## 四、运行环境
+## 四、使用说明
 
-- Windows
+### 1. 环境要求
+
+- Windows（在 Win11 上写的，别的系统没试过）
 - Python 3.13
 - MySQL 8.0
-- PowerShell
 
-## 五、数据库配置
+### 2. 建库建表
 
-### 1. 创建数据库
-
-在 MySQL 命令行中执行：
+MySQL 命令行里执行：
 
 ```sql
 CREATE DATABASE IF NOT EXISTS short_link_db
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_0900_ai_ci;
 ```
-
-### 2. 创建数据表
 
 ```sql
 USE short_link_db;
@@ -73,127 +68,95 @@ CREATE TABLE IF NOT EXISTS short_links (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-### 3. 配置环境变量
+### 3. 配置 .env
 
-在项目根目录创建本地 `.env` 文件：
+复制 `.env.example` 为 `.env`，填上自己的数据库账号密码：
 
 ```dotenv
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USER=short_link_app
-DB_PASSWORD=替换为你自己的数据库密码
+DB_PASSWORD=你的密码
 DB_NAME=short_link_db
+BASE_URL=http://127.0.0.1:8000
 ```
 
-请使用本地实际的数据库账号和密码，不要将真实密码提交到 GitHub。
+`BASE_URL` 是拼短链接用的前缀，本地开发用默认值就行，别乱填到公网地址上去。
 
-项目应用账号至少需要对 `short_link_db` 具有 SELECT、INSERT 和 UPDATE 权限。
-
-## 六、安装与启动
-
-### 1. 创建虚拟环境
-
-在项目根目录执行：
+### 4. 安装依赖并启动
 
 ```powershell
 python -m venv .venv
-```
-
-### 2. 安装依赖
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install fastapi "uvicorn[standard]" PyMySQL python-dotenv pytest httpx
-```
-
-### 3. 检查数据库连接
-
-确保 MySQL 服务器已经启动，然后执行：
-
-```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe test_db.py
-```
-
-连接成功时，会输出数据库名称和 MySQL 版本。
-
-### 4. 启动 API 服务
-
-```powershell
 .\.venv\Scripts\python.exe -m uvicorn main:app --reload
 ```
 
-启动后访问：
+启动之后：
 
-- API 文档：http://127.0.0.1:8000/docs
+- 接口文档：http://127.0.0.1:8000/docs
 - 健康检查：http://127.0.0.1:8000/health
 
-## 七、接口说明
+## 五、接口说明
 
-### 1. 创建短链接
-
-- 方法：POST
-- 路径：`/links`
-
-请求示例：
+### 1. 创建短链接 `POST /links`
 
 ```json
 {
-  "original_url": "https://example.com/article/123"
+  "original_url": "https://example.com/article/123",
+  "custom_code": "mylink01"
 }
 ```
 
-成功时返回短码、短链接、原始网址和数据库记录 ID。
+`custom_code` 可以不填，不填就随机生成。填了但已被占用返回 409，格式不对返回 422。
 
-### 2. 访问短链接
+### 2. 跳转 `GET /r/{code}`
 
-- 方法：GET
-- 路径：`/r/{code}`
+302 跳转到原网址，同时点击次数 +1。短码不存在返回 404。
 
-系统根据短码查询原始网址，并返回 HTTP 302 重定向。
+### 3. 查询短链接 `GET /links/{code}`
 
-如果短码不存在，返回 HTTP 404。
+返回原网址、创建时间和点击次数。
 
-### 3. 健康检查
+### 4. 删除短链接 `DELETE /links/{code}`
 
-- 方法：GET
-- 路径：`/health`
+删除成功返回 200，删不存在的返回 404。
 
-正常情况下返回：
+### 5. 健康检查 `GET /health`
 
-```json
-{
-  "status": "ok"
-}
-```
+返回 `{"status": "ok"}`。
 
-## 八、运行自动化测试
-
-确保 MySQL 已启动，并且项目根目录下的 `.env` 配置正确。
-
-执行：
+## 六、测试
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -v test_api.py
+.\.venv\Scripts\python.exe -m pytest -v
 ```
 
-目前已验证的测试场景：
+测试会自动切到 `short_link_test_db`，跑之前自动建库、建表、清数据，不会污染正式库。
+一共 10 个用例，覆盖上面所有接口。
 
-- 健康检查接口。
-- 创建短链接与重定向。
-- 不存在的短码返回 HTTP 404。
-- 非法网址返回 HTTP 422。
+## 七、更新记录
 
-测试会通过数据库创建短链接记录，因此多次运行可能产生额外的测试数据。
+- **v0.3.0**（2026-10-17）：新增自定义短码、查询、删除接口；短链接前缀改用固定的 `BASE_URL`，不再依赖请求头里的 Host；测试改成自动清理数据
+- **v0.2.0**（2026-10-10）：补充健康检查和参数校验
+- **v0.1.0**：最开始的版本，只有创建和跳转
 
-## 九、当前项目范围
+## 八、已知问题（诚实清单）
 
-当前版本主要用于学习和演示，已实现短链接创建、数据库持久化、重定向、访问次数更新和基础自动化测试。
+写是能跑，但坑不少，先记在这儿：
 
-后续可以逐步完善：
+- 每个请求都新建一条数据库连接，没有连接池，并发一高肯定扛不住
+- 随机短码撞了最多重试 5 次，再撞就返回 500（概率实在太低，懒得管）
+- 网址超过 2048 字符会直接报 500，没做长度校验
+- 没有限流，接口可以随便刷
+- 没有做过期时间，建出来的链接永久有效
+- 没有部署过，只在本地跑过，生产环境什么样不知道
+- README 是最后赶着写的，个别地方可能和代码对不上，以代码为准
 
-- 测试数据隔离与清理。
-- 更完善的异常处理和日志。
-- Redis 缓存及缓存失效策略。
-- 数据库查询性能分析。
-- 自动化测试与持续集成。
+## 九、下一步
 
-当前版本尚未实现 Redis 缓存和生产环境部署，不应将这些内容描述为已经完成的功能。
+按优先级排的话：
+
+1. 上数据库连接池（现在这个是最急的）
+2. 加短链接过期时间
+3. 点击统计按天拆分，看看访问趋势

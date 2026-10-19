@@ -11,3 +11,6 @@ __pycache__/
 # Test and editor cache
 .pytest_cache/
 .vscode/
+
+# WorkBuddy 本地记忆目录，不提交
+.workbuddy/
